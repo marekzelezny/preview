@@ -14,7 +14,7 @@ use Extended\ACF\Fields\Select;
 use Extended\ACF\Location;
 use Illuminate\Support\Collection;
 
-class Calendar extends PageTemplateController
+class CalendarController extends PageTemplateController
 {
     use HasAcfFields;
 
