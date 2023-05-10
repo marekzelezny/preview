@@ -1,0 +1,319 @@
+
+{% extends "layouts/app.twig" %}
+
+{% block body %}
+    {% embed 'partials/header.twig' %}{% endembed %}
+
+    <section x-data="calendar()">
+
+        <div class="master-banner content-banner bck-blue fnt-white">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <h1>
+                            {{ global.topicsTitle }}
+                        </h1>
+                    </div>
+                    {% if global.topicsActive %}
+                    <div class="col-12">
+                        <article class="article cols">
+                            <ul>
+                                {% for listItem in global.topics %}
+                                <li>
+                                    {{ listItem.topic }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </article>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <div class="buttons">
+                            {% if global.showAllProgramButtonActive %}
+                            <a href="#kalendar" class="btn btn-primary bck-yellow fnt-blue-dark btn-arrow-down">
+                                Zobrazit kompletní program
+                            </a>
+                            {% endif %}
+
+                            {% if global.mapLink %}
+                            <a href="{{ global.mapLink }}" class="btn btn-primary bck-light-blue fnt-white">
+                                Mapa přednáškových prostor
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% embed 'components/blocks/currentEvents.twig' with { events: currentEvents.events } %}{% endembed %}
+            </div>
+        </div>
+
+        <nav id="kalendar" class="nav nav-tabs-header bck-blue" style="position: relative; top: -5px;">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        {% for day in calendar.days.options %}
+                        <a href="?den={{ day.format('Y-m-d') }}#kalendar" class="tab {{ day.format('Y-m-d') == calendar.days.current ? 'active' : '' }}">
+                            {{ day.getTranslatedDayName() }}, {{ day.format('d. n.') }}
+                        </a>
+                        {% endfor %}
+
+                        <div class="visual-mode">
+                            <span>Zobrazení</span>
+
+                            <template x-for="view in views.options">
+                                <button
+                                    :id="view"
+                                    :class="views.current == view ? 'active' : ''"
+                                    @click="views.current = view"
+                                    class="visual-mode-button"
+                                >
+                                    <span
+                                        class="icon"
+                                        :class="'icon-'+view"
+                                    ></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <nav class="nav nav-filters">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="filters form">
+                            <form action="">
+                                <h2>Filtrovat</h2>
+                                <div class="filters-item">
+                                    <div class="selectbox">
+                                        <div class="filters-top-input">
+                                            <input
+                                                x-model="organizationFilterInput"
+                                                type="text"
+                                                placeholder="Filtrovat dle organizace"
+                                            >
+                                        </div>
+                                        <div class="buttonset">
+                                            <div class="buttonset-overflow">
+                                                {% for organization in organizations %}
+                                                <label
+                                                    class="organization-filter"
+                                                    data-name="{{ organization.name }}"
+                                                >
+                                                    <input
+                                                        x-model="organizations"
+                                                        value="{{ organization.name }}"
+                                                        x-on:change="filterEvents"
+                                                        type="checkbox"
+                                                    >
+                                                    {{ organization.name }}
+                                                </label>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <template x-for="organization in organizations">
+                                        <span
+                                            x-text="organization"
+                                            @click.prevent="clearMeta('organizations', organization)"
+                                            class="label bck-grey-light rounded cross"
+                                        ></span>
+                                    </template>
+                                    <template x-if="organizations.length">
+                                        <span
+                                            @click="clearArray('organizations')"
+                                            class="label bck-red-light rounded cross">
+                                            Zrušit vše
+                                        </span>
+                                    </template>
+                                </div>
+                                <div class="filters-item">
+                                    <div class="selectbox">
+                                        <div class="filters-top-input">
+                                            <input
+                                                x-model="auditoriumFilterInput"
+                                                type="text"
+                                                placeholder="Filtrovat typ sálu"
+                                            >
+                                        </div>
+                                        <div class="buttonset">
+                                            <div class="buttonset-overflow">
+                                                {% for auditorium in auditoriums %}
+                                                <label
+                                                    class="auditorium-filter"
+                                                    data-name="{{ auditorium.name }}"
+                                                >
+                                                    <input
+                                                        x-model="auditoriums"
+                                                        value="{{ auditorium.name }}"
+                                                        x-on:change="filterEvents"
+                                                        type="checkbox"
+                                                    >
+                                                    {{ auditorium.name }}
+                                                </label>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <template x-for="auditorium in auditoriums">
+                                        <span
+                                            x-text="auditorium"
+                                            @click.prevent="clearMeta('auditoriums', auditorium)"
+                                            class="label bck-grey-light rounded cross"
+                                        ></span>
+                                    </template>
+                                    <template x-if="auditoriums.length">
+                                        <span
+                                            @click="clearArray('auditoriums')"
+                                            class="label bck-red-light rounded cross">
+                                            Zrušit vše
+                                        </span>
+                                    </template>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div>
+            <div x-show="views.current == 'list'">
+            {% include 'partials/calendar/views/list.twig'
+                with { events: calendar.list }
+            %}
+            </div>
+
+            <div x-show="views.current == 'grid'">
+            {% include 'partials/calendar/views/grid.twig'
+                with { grid: calendar.grid }
+            %}
+            </div>
+        </div>
+    </section>
+
+    {% embed 'components/blocks/partners.twig' with {
+        title: '',
+        hasLightBackground: false,
+        tabs: false,
+    } %}{% endembed %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function calendar()
+    {
+        return {
+            views: {{ calendar.views | json_encode | raw }},
+            events: [],
+            organizations: [],
+            auditoriums: [],
+            organizationFilterInput: '',
+            auditoriumFilterInput: '',
+            init() {
+                this.$watch('organizationFilterInput', (value) => {
+                    this.filterDropdown(value, 'organization');
+                });
+
+                this.$watch('auditoriumFilterInput', (value) => {
+                    this.filterDropdown(value, 'auditorium');
+                });
+
+                this.fetchEvents();
+            },
+            fetchEvents() {
+                this.events = Array.from(document.querySelectorAll('.event.event-subevent')).map(event => {
+                    return {
+                        el: event,
+                        id: event.dataset.id,
+                        class: '.event-' + event.dataset.id + ':not(.event--skip-filters)',
+                        organization: event.dataset.organization ? JSON.parse(event.dataset.organization) : [],
+                        auditorium: event.dataset.auditorium,
+                    }
+                });
+            },
+            eventIsInArray(event) {
+                return this.events.includes(event);
+            },
+            filterEvents() {
+                if(this.showAllEvents()) {
+                    return;
+                }
+
+                this.events.forEach(function(event) {
+                    this.hideEvent(event);
+
+                    let organization = event.organization.some(r => this.organizations.includes(r));
+                    let auditorium = this.auditoriums.includes(event.auditorium);
+
+                    if((organization || auditorium) && (this.organizations.length > 0 && this.auditoriums.length > 0)) {
+                        if(organization && auditorium) {
+                            this.showEvent(event);
+                        }
+                    } else if(organization || auditorium) {
+                        this.showEvent(event);
+                    }
+
+                }.bind(this));
+            },
+            showAllEvents() {
+                if(this.organizations.length === 0 && this.auditoriums.length === 0) {
+                    this.events.forEach(function(event) {
+                        document.querySelectorAll(event.class).forEach(function(el) {
+                            el.classList.remove('hidden');
+                        });
+                    });
+
+                    return true;
+                }
+
+                return false;
+            },
+            hideAllEvents() {
+                this.events.forEach(function(event) {
+                    this.hideEvent(event);
+                });
+            },
+            hideEvent(event) {
+                document.querySelectorAll(event.class).forEach(function(el) {
+                    el.classList.add('hidden');
+                });
+            },
+            showEvent(event) {
+                document.querySelectorAll(event.class).forEach(function(el) {
+                    el.classList.remove('hidden');
+                });
+            },
+            clearArray(element) {
+                this[element] = [];
+                this.filterEvents();
+            },
+            clearMeta(element, meta) {
+                this[element] = this[element].filter(function(item) {
+                    return item !== meta;
+                });
+
+                this.filterEvents();
+            },
+            filterDropdown(value, type) {
+                const dropdown = document.querySelectorAll(`.${type}-filter`);
+
+                for (const item of dropdown) {
+                    const dataName = item.getAttribute('data-name').toLowerCase();
+
+                    if (dataName.includes(value.toLowerCase())) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+            }
+        }
+    };
+</script>
+{% endblock %}

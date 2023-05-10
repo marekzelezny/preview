@@ -1,0 +1,71 @@
+<div class="main calendar-page">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="component calendar-table">
+                    <table>
+                        <thead class="calendar-header">
+                            <tr>
+                                <th class="calendar-header-item calendar-item-first blankblank">&nbsp;</th>
+                                {% for column in grid.columns %}
+                                <th class="calendar-header-item" style="background-color: {{ column.meta('color') }}">
+                                    {{ column.name }}
+                                </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody class="calendar-body">
+                            <tr class="spacer">
+                                <td colspan="7">&nbsp;</td>
+                            </tr>
+
+                            {% for row in grid.rows %}
+                            <tr
+                                data-time="{{ row.format('H:i') }}"
+                                class="calendar-row {{ row.minute % 15 == 0 ? 'hour' : '' }} {{ row.first ? 'calendar-row-first' : '' }}"
+                            >
+                                <td class="calendar-entry calendar-item-time">
+                                    {% if row.minute % 15 == 0 %}
+                                        <span>
+                                            <time datetime="T{{ row.format('H:i') }}">
+                                                {{ row.format('G.i') }}
+                                            </time>
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                {% for column in grid.columns %}
+                                    {% if grid.currentEvent(column.name, row) %}
+                                        {% set event = grid.currentEvent(column.name, row) %}
+                                        <td data-column="{{ column }}" rowspan="{{ event.rowspan }}" class="calendar-entry">
+                                            {% include 'partials/calendar/grid-event.twig'
+                                                with {
+                                                    event: event,
+                                                    mainEvent: grid.getMainEvent(column.name, event.date.start, event.date.end),
+                                                    column: column,
+                                                    row: row,
+                                                }
+                                            %}
+                                        </td>
+                                    {% else %}
+                                        {% if grid.hasEventInThisTime(column.name, row) == false %}
+                                            <td data-column="{{ column }}" class="calendar-entry"></td>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+
+                            <tr class="spacer spacer-bottom">
+                                <td class="calendar-entry calendar-item-time"></td>
+                                {% for column in grid.columns %}
+                                <td class="calendar-entry"></td>
+                                {% endfor %}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
