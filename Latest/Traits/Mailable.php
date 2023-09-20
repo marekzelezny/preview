@@ -40,6 +40,39 @@ trait Mailable
             });
     }
 
+    public function sendMailToParticipatingInsurances(Entry $application, string $acf_field, array $options = []) : void
+    {
+        $settings = self::getAcfField($acf_field);
+
+        if (! $settings->activated) {
+            return;
+        }
+
+        $insurances = InsuranceUser::getParticipatingInsurancesByApplication($application->id);
+
+        if (! $insurances) {
+            return;
+        }
+
+        foreach ($insurances as $insurance) {
+            $user = new User($insurance);
+
+            $default_options = self::mapContent(
+                application: $application,
+                type: 'insurance',
+                user_id: $insurance
+            );
+
+            $sending_options = array_merge($default_options, $options);
+
+            self::sendEmailTo(
+                to: $user->user_email,
+                settings: $settings,
+                content: $sending_options,
+            );
+        }
+    }
+
     public function sendMailToSubscriber(Entry $application, string $acf_field, array $options = []) : void
     {
         $settings = self::getAcfField($acf_field);

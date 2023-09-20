@@ -4,16 +4,18 @@ namespace Adity\Hooks;
 
 use Adity\Actions\CreateAdityMetaAction;
 use Adity\Enums\UserType;
+use Adity\Enums\WhatsAppTemplateEnum;
 use Adity\Models\Entry;
 use Adity\Support\InsuranceUser;
 use Adity\Support\Mapper;
 use Adity\Traits\Mailable;
 use Adity\Traits\ModifiesEntry;
+use Adity\Traits\SendsWhatsAppMessages;
 use Illuminate\Support\Collection;
 
 class ApplicationCreated extends Hookable
 {
-    use Mailable, ModifiesEntry;
+    use Mailable, ModifiesEntry, SendsWhatsAppMessages;
 
     public string $hook = 'frm_after_create_entry';
     public string $type = 'action';
@@ -51,6 +53,16 @@ class ApplicationCreated extends Hookable
         $this->sendMailToInsurance(
             application: $this->entry,
             acf_field: 'application_new_insurance',
+        );
+
+        $this->sendWhatsAppMessageToSubscriber(
+            application: $this->entry,
+            template: WhatsAppTemplateEnum::APPLICATION_NEW
+        );
+
+        $this->sendWhatsAppMessageToInsurances(
+            application: $this->entry,
+            template: WhatsAppTemplateEnum::INSURANCE_NEW_APPLICATION
         );
     }
 
